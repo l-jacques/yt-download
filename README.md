@@ -1,9 +1,10 @@
 # yt-download
 
-this project is a test project to play and learn docker
-objective is to have a node server listening to post with a url and with that url use the yt-dlp util to actually download the video and save it"
+⚠️⚠️
+This project is a test project **to play and learn docker** 
+objective is to have a node server listening to post with a url and with that url use the yt-dlp util to actually download the video and save it
 
-NOTE: there is little to no check in place this is a purely test and learn project
+**NOTE**: there is little to no check in place this is a purely test and learn project
 
 ## Download the video
 
