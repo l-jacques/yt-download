@@ -11,7 +11,7 @@ Post a json to  `http://localhost:3000/download` formated as follow
 
 ```json
  {
-     "url" = "URL_OF_THE_VIDEO"
+     "url": "URL_OF_THE_VIDEO"
  }
 ```
 
