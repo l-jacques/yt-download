@@ -1,28 +1,38 @@
-# Utiliser l'image officielle Node.js
-FROM alpine:latest
+# Use the official slim Python image
+FROM python:3.13.2-slim
 
-# Installer yt-dlp
-ARG build_dependencies="python3-dev"
-ARG app_dependencies="py3-pip curl jq yt-dlp npm"
-RUN apk add --no-cache $build_dependencies $app_dependencies
+# Install dependencies and clean up to reduce image size
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
 
-# Créer un répertoire de travail pour l'application
+# Install yt-dlp using pip
+RUN pip install yt-dlp && \
+    rm -rf /root/.cache
+
+# Create a working directory for the application
 WORKDIR /usr/src/app
 
-# Copier les fichiers package.json et package-lock.json pour installer les dépendances
-COPY package*.json ./
+# Copy the requirements file and install dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Installer les dépendances de l'application
-RUN npm install
-
-# Copier le reste des fichiers de l'application
+# Copy the rest of the application files
 COPY . .
 
 # Define the volume
 VOLUME [ "/downloads" ]
 
-# Exposer le port défini par la variable d'environnement
+# Expose the port defined by the environment variable
 EXPOSE ${PORT:-3000}
 
-# Définir la commande pour démarrer l'application
-CMD [ "node", "server.js" ]
+# Define default environment variables
+ENV GUNICORN_WORKERS=1
+ENV GUNICORN_TIMEOUT=300
+
+# Define the command to run the application using environment variables
+# CMD ["gunicorn", "--bind", "0.0.0.0:3000", "--workers", "$GUNICORN_WORKERS", "--timeout", "$GUNICORN_TIMEOUT", "app:app"]
+# Define the entry point script
+ENTRYPOINT [ "sh", "./entrypoint.sh" ]
