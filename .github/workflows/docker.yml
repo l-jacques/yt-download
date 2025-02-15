@@ -27,6 +27,12 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v5.1.0
         env:
             GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: name/app
 
       - name: Create GitHub Release
         id: create_release
@@ -46,4 +52,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
