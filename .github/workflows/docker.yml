@@ -41,7 +41,7 @@ jobs:
           prerelease: false
       
       - name: Build and push Docker image
-        if: steps.create_release.outputs.release_id != ''  # Proceed only if the release was successfully created
+        if: success()  # Proceed only if all previous steps succeeded
         uses: docker/build-push-action@v6
         with:
           context: .
