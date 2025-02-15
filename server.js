@@ -17,9 +17,6 @@ const statusEmojis = {
 };
 
 app.use(express.json());
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
 
 app.post('/download', (req, res) => {
     const url = req.body.url;

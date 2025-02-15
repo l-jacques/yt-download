@@ -1,3 +1,6 @@
+ARG DOCKER_USERNAME
+ARG DOCKER_REPOSITORY
+
 # Use the official slim Python image
 FROM python:3.13.2-slim
 
