@@ -9,7 +9,7 @@ import threading
 app = Flask(__name__)
 download_dir = "/downloads"
 download_status = {}
-executor = ThreadPoolExecutor(max_workers=1)
+executor = ThreadPoolExecutor(max_workers=4)  # Increase the number of threads for better concurrency
 status_lock = threading.Lock()
 
 status_emojis = {
@@ -23,34 +23,41 @@ status_emojis = {
 def hello_world():
     return 'Hello World!'
 
-def download_video(download_id, url):
-    print(f"Starting download for ID: {download_id}")
+def fetch_title(download_id, url):
     info_command = f"yt-dlp --get-title {url}"
-    info_result = subprocess.run(info_command, shell=True, capture_output=True, text=True)
+    info_process = subprocess.Popen(info_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = info_process.communicate()
 
     with status_lock:
-        if info_result.returncode != 0:
+        if info_process.returncode != 0:
             download_status[download_id] = {
-                'status': f"Error: {info_result.stderr}",
+                'status': f"Error: {stderr}",
                 'title': '',
                 'filePath': ''
             }
             print(f"Error fetching title for ID: {download_id}")
             return
 
-        download_status[download_id]['title'] = info_result.stdout.strip()
-        download_command = f"yt-dlp -o \"{download_dir}/%(title)s.%(ext)s\" {url}"
-        download_result = subprocess.run(download_command, shell=True, capture_output=True, text=True)
+        download_status[download_id]['title'] = stdout.strip()
+    download_video(download_id, url)
 
-        if download_result.returncode != 0:
+def download_video(download_id, url):
+    with status_lock:
+        title = download_status[download_id]['title']
+    download_command = f"yt-dlp -S \"+res:480,codec,br\" -o \"{download_dir}/%(title)s.%(ext)s\" {url}"
+    download_process = subprocess.Popen(download_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = download_process.communicate()
+
+    with status_lock:
+        if download_process.returncode != 0:
             download_status[download_id]['errored'] = datetime.now()
-            download_status[download_id]['status'] = f"Error: {download_result.stderr}"
+            download_status[download_id]['status'] = f"Error: {stderr}"
             print(f"Error downloading video for ID: {download_id}")
             return
 
         download_status[download_id]['status'] = 'Downloaded'
         download_status[download_id]['ended'] = datetime.now()
-        download_status[download_id]['filePath'] = os.path.join(download_dir, f"{download_status[download_id]['title']}.{download_result.stdout.split('.')[-1].strip()}")
+        download_status[download_id]['filePath'] = os.path.join(download_dir, f"{download_status[download_id]['title']}.mp4")
 
     print(f"Completed download for ID: {download_id}")
 
@@ -70,8 +77,8 @@ def download():
         }
     print(f"Initialized download for ID: {download_id}")
 
-    executor.submit(download_video, download_id, url)
-    return jsonify({'downloadId': download_id, 'message': 'Download started', 'title': download_status[download_id]['title']})
+    executor.submit(fetch_title, download_id, url)
+    return jsonify({'downloadId': download_id, 'message': 'Download started'})
 
 @app.route('/statusPage')
 def status_page():
